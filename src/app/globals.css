@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+:root {
+  --background: #faf7f0;
+  --foreground: #2d261e;
+  --sidebar: #f3efe6;
+  --sidebar-border: #e2dacb;
+  --grid-line: #e5dec9;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-serif: var(--font-lora), Georgia, Cambria, 'Times New Roman', serif;
+  --font-sans: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-geist-mono), monospace;
+}
+
+body {
+  background: #faf7f0;
+  color: #2d261e;
+  font-family: var(--font-sans);
+  /* Prevent iOS/Android browser swipe navigation on canvas */
+  overscroll-behavior: none;
+  touch-action: none;
+}
+
+/* Subtle physical paper texture effect */
+.paper-shadow {
+  box-shadow: 0 4px 6px -1px rgba(60, 40, 20, 0.08), 0 2px 4px -2px rgba(60, 40, 20, 0.06);
+}
+
+.polaroid-shadow {
+  box-shadow: 0 10px 25px -5px rgba(65, 45, 25, 0.15), 0 8px 10px -6px rgba(65, 45, 25, 0.1);
+}
+
+/* Washi tape strip styling */
+.washi-tape {
+  background: rgba(245, 235, 215, 0.85);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border-left: 2px dashed rgba(200, 185, 160, 0.6);
+  border-right: 2px dashed rgba(200, 185, 160, 0.6);
+}
+
+/* Prevent browser back/forward swipe gestures on mobile canvas */
+.react-flow__viewport {
+  overscroll-behavior: none;
+  touch-action: none;
+}
