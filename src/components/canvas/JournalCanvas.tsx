@@ -25,6 +25,7 @@ interface JournalCanvasProps {
   items: ScreenshotItem[];
   onDeleteNode: (id: string) => void;
   onPreviewNode: (item: ScreenshotItem) => void;
+  onEditNode: (item: ScreenshotItem) => void;
   searchQuery: string;
   selectedCategory: string;
   theme: CanvasTheme;
@@ -34,6 +35,7 @@ export function JournalCanvas({
   items,
   onDeleteNode,
   onPreviewNode,
+  onEditNode,
   searchQuery,
   selectedCategory,
   theme,
@@ -41,6 +43,24 @@ export function JournalCanvas({
   const nodeTypes = useMemo(() => ({ screenshotNode: ScreenshotNode }), []);
 
   const initialNodes: Node[] = useMemo(() => {
+    // Group items by category for stacked layout
+    const categoryGroups = items.reduce((acc, item) => {
+      const cat = item.category || 'Uncategorized';
+      if (!acc[cat]) acc[cat] = [];
+      acc[cat].push(item);
+      return acc;
+    }, {} as Record<string, ScreenshotItem[]>);
+
+    // Calculate positions with category stacking (20px gap between categories)
+    let yOffset = 60;
+    const categoryPositions: Record<string, { startY: number }> = {};
+    
+    Object.keys(categoryGroups).sort().forEach((category) => {
+      categoryPositions[category] = { startY: yOffset };
+      const itemsInCategory = categoryGroups[category].length;
+      yOffset += Math.ceil(itemsInCategory / 3) * 320 + 20; // 20px gap between categories
+    });
+
     return items.map((item, index) => {
       const matchesSearch =
         searchQuery.trim() === '' ||
@@ -55,17 +75,29 @@ export function JournalCanvas({
 
       const isVisible = matchesSearch && matchesCategory;
 
+      // Use existing position if available, otherwise calculate based on category
+      let position = item.position;
+      if (!position) {
+        const category = item.category || 'Uncategorized';
+        const categoryStartY = categoryPositions[category]?.startY || 60;
+        const categoryItems = categoryGroups[category];
+        const itemIndexInCategory = categoryItems.findIndex((i) => i.id === item.id);
+        
+        position = {
+          x: (itemIndexInCategory % 3) * 220 + 60,
+          y: categoryStartY + Math.floor(itemIndexInCategory / 3) * 320,
+        };
+      }
+
       return {
         id: item.id,
         type: 'screenshotNode',
-        position: item.position || {
-          x: (index % 3) * 220 + 60,
-          y: Math.floor(index / 3) * 320 + 60,
-        },
+        position,
         data: {
           ...item,
           onDelete: onDeleteNode,
           onPreview: onPreviewNode,
+          onEdit: onEditNode,
           theme,
         },
         className: isVisible
@@ -73,7 +105,7 @@ export function JournalCanvas({
           : 'opacity-15 pointer-events-none transition-opacity',
       };
     });
-  }, [items, searchQuery, selectedCategory, onDeleteNode, onPreviewNode, theme]);
+  }, [items, searchQuery, selectedCategory, onDeleteNode, onPreviewNode, onEditNode, theme]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);

@@ -48,6 +48,7 @@ export function Sidebar({
   const [isRecording, setIsRecording] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const [pastedToast, setPastedToast] = useState(false);
+  const [inputMode, setInputMode] = useState<'text' | 'voice'>('text');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -183,54 +184,118 @@ export function Sidebar({
           </div>
         </div>
 
-        {/* ── Voice Note ── */}
+        {/* ── Instruction Input (Text or Voice) ── */}
         <div>
           <label className="block text-[11px] font-serif font-medium uppercase tracking-wider mb-1.5" style={{ color: t.textSecondary }}>
-            Voice Note
+            Instruction
           </label>
-          <button
-            type="button"
-            onClick={toggleRecording}
-            className={`w-full relative flex items-center justify-between px-3.5 py-3 rounded-xl border text-xs font-serif transition-all duration-200 shadow-sm ${isRecording ? 'animate-pulse' : 'active:scale-[0.99]'}`}
-            style={{
-              backgroundColor: isRecording ? '#7f1d1d' : t.ctaBg,
-              color: isRecording ? '#fecaca' : t.ctaText,
-              borderColor: isRecording ? '#991b1b' : t.ctaBg,
-            }}
-          >
-            <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center"
-                style={{ backgroundColor: isRecording ? '#991b1b' : t.isDark ? t.accentBg : '#43392d', color: isRecording ? '#fff' : t.isDark ? t.accentText : '#e8dfcf' }}>
-                {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-              </div>
-              <div className="text-left">
-                <div className="font-semibold tracking-wide">{isRecording ? 'Listening...' : 'Voice Note'}</div>
-                <div className="text-[10px] opacity-75 font-sans">{isRecording ? 'Tap when finished' : 'Tap to record thought'}</div>
-              </div>
-            </div>
-            <div className="flex items-center gap-0.5 pr-1">
-              {[isRecording ? 'h-4 animate-bounce' : 'h-2 opacity-50', isRecording ? 'h-6 animate-bounce [animation-delay:150ms]' : 'h-3 opacity-50', isRecording ? 'h-3 animate-bounce [animation-delay:300ms]' : 'h-1.5 opacity-50'].map((cls, i) => (
-                <span key={i} className={`w-1 rounded-full bg-current transition-all ${cls}`} />
-              ))}
-            </div>
-          </button>
+          
+          {/* Mode Toggle */}
+          <div className="flex gap-1 mb-2">
+            <button
+              type="button"
+              onClick={() => setInputMode('text')}
+              className={`flex-1 px-3 py-1.5 rounded-lg text-[10px] font-serif font-medium transition-all ${
+                inputMode === 'text' ? 'shadow-sm' : 'opacity-60'
+              }`}
+              style={{
+                backgroundColor: inputMode === 'text' ? t.ctaBg : t.inputBg,
+                color: inputMode === 'text' ? t.ctaText : t.textSecondary,
+                borderColor: t.inputBorder,
+              }}
+            >
+              Type
+            </button>
+            <button
+              type="button"
+              onClick={() => setInputMode('voice')}
+              className={`flex-1 px-3 py-1.5 rounded-lg text-[10px] font-serif font-medium transition-all ${
+                inputMode === 'voice' ? 'shadow-sm' : 'opacity-60'
+              }`}
+              style={{
+                backgroundColor: inputMode === 'voice' ? t.ctaBg : t.inputBg,
+                color: inputMode === 'voice' ? t.ctaText : t.textSecondary,
+                borderColor: t.inputBorder,
+              }}
+            >
+              Voice
+            </button>
+          </div>
 
-          {(instruction || isRecording) && (
-            <div className="mt-2 p-2.5 rounded-lg shadow-inner text-xs font-serif"
-              style={{ backgroundColor: t.inputBg, border: `1px solid ${t.inputBorder}`, color: t.textPrimary }}>
-              <div className="flex items-center justify-between text-[10px] uppercase tracking-wider mb-1" style={{ color: t.textFaint }}>
-                <span>Dictated Note</span>
-                <button onClick={() => setInstruction('')} className="hover:text-rose-500">Clear</button>
-              </div>
-              <textarea
-                value={instruction}
-                onChange={(e) => setInstruction(e.target.value)}
-                rows={2}
-                placeholder="Transcribed voice note..."
-                className="w-full bg-transparent resize-none border-none p-0 text-xs focus:outline-none"
-                style={{ color: t.textPrimary }}
-              />
-            </div>
+          {/* Text Input */}
+          {inputMode === 'text' && (
+            <textarea
+              value={instruction}
+              onChange={(e) => setInstruction(e.target.value)}
+              rows={3}
+              placeholder="Add a note or instruction for AI analysis..."
+              className="w-full px-3 py-2 rounded-lg text-xs font-serif border focus:outline-none resize-none transition-all"
+              style={{
+                backgroundColor: t.inputBg,
+                borderColor: t.inputBorder,
+                color: t.textPrimary,
+              }}
+            />
+          )}
+
+          {/* Voice Input */}
+          {inputMode === 'voice' && (
+            <>
+              <button
+                type="button"
+                onClick={toggleRecording}
+                className={`w-full relative flex items-center justify-between px-3.5 py-3 rounded-xl border text-xs font-serif transition-all duration-200 shadow-sm ${
+                  isRecording ? 'animate-pulse' : 'active:scale-[0.99]'
+                }`}
+                style={{
+                  backgroundColor: isRecording ? '#7f1d1d' : t.ctaBg,
+                  color: isRecording ? '#fecaca' : t.ctaText,
+                  borderColor: isRecording ? '#991b1b' : t.ctaBg,
+                }}
+              >
+                <div className="flex items-center gap-2.5">
+                  <div
+                    className="w-7 h-7 rounded-lg flex items-center justify-center"
+                    style={{
+                      backgroundColor: isRecording ? '#991b1b' : t.isDark ? t.accentBg : '#43392d',
+                      color: isRecording ? '#fff' : t.isDark ? t.accentText : '#e8dfcf',
+                    }}
+                  >
+                    {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                  </div>
+                  <div className="text-left">
+                    <div className="font-semibold tracking-wide">{isRecording ? 'Listening...' : 'Tap to record'}</div>
+                    <div className="text-[10px] opacity-75 font-sans">{isRecording ? 'Tap when finished' : 'Voice input for instruction'}</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-0.5 pr-1">
+                  {[
+                    isRecording ? 'h-4 animate-bounce' : 'h-2 opacity-50',
+                    isRecording ? 'h-6 animate-bounce [animation-delay:150ms]' : 'h-3 opacity-50',
+                    isRecording ? 'h-3 animate-bounce [animation-delay:300ms]' : 'h-1.5 opacity-50',
+                  ].map((cls, i) => (
+                    <span key={i} className={`w-1 rounded-full bg-current transition-all ${cls}`} />
+                  ))}
+                </div>
+              </button>
+
+              {(instruction || isRecording) && (
+                <div className="mt-2 p-2.5 rounded-lg shadow-inner text-xs font-serif">
+                  <div className="flex items-center justify-between text-[10px] uppercase tracking-wider mb-1" style={{ color: t.textFaint }}>
+                    <span>Transcribed</span>
+                    <button onClick={() => setInstruction('')} className="hover:text-rose-500">Clear</button>
+                  </div>
+                  <textarea
+                    value={instruction}
+                    onChange={(e) => setInstruction(e.target.value)}
+                    rows={2}
+                    placeholder="Transcribed voice note..."
+                    className="w-full bg-transparent resize-none border-none p-0 text-xs focus:outline-none"
+                    style={{ color: t.textPrimary }}
+                  />
+                </div>
+              )}
+            </>
           )}
         </div>
 

@@ -2,7 +2,7 @@
 
 import React, { memo, useState, useRef, useEffect } from 'react';
 import { Handle, Position, NodeProps } from '@xyflow/react';
-import { Maximize2, Trash2, Copy, Check, Tag, Mic, Calendar, Volume2, VolumeX } from 'lucide-react';
+import { Maximize2, Trash2, Copy, Check, Tag, Mic, Calendar, Volume2, VolumeX, Edit3 } from 'lucide-react';
 import { ScreenshotItem } from '@/types/journal';
 import { CanvasTheme } from '@/lib/themes';
 import { generateAudioFromText, playAudioBlob, speakWithWebSpeech, isElevenLabsConfigured } from '@/lib/elevenlabs';
@@ -10,6 +10,7 @@ import { generateAudioFromText, playAudioBlob, speakWithWebSpeech, isElevenLabsC
 export interface ScreenshotNodeData extends ScreenshotItem {
   onDelete?: (id: string) => void;
   onPreview?: (item: ScreenshotItem) => void;
+  onEdit?: (item: ScreenshotItem) => void;
   theme?: CanvasTheme;
 }
 
@@ -102,6 +103,7 @@ const ScreenshotNodeComponent = ({ data, selected }: NodeProps) => {
   };
   const handleDelete  = (e: React.MouseEvent) => { e.stopPropagation(); nodeData.onDelete?.(nodeData.id); };
   const handlePreview = (e: React.MouseEvent) => { e.stopPropagation(); nodeData.onPreview?.(nodeData); };
+  const handleEdit    = (e: React.MouseEvent) => { e.stopPropagation(); nodeData.onEdit?.(nodeData); };
 
   return (
     <div
@@ -181,10 +183,18 @@ const ScreenshotNodeComponent = ({ data, selected }: NodeProps) => {
 
         {/* Desktop quick-actions */}
         <div className="hidden md:flex absolute top-1.5 right-1.5 items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button 
-            onClick={handleVoicePlayback} 
+          <button
+            onClick={handleEdit}
+            className="p-1 rounded transition-colors"
+            style={{ backgroundColor: isDark ? 'rgba(30,30,40,0.9)' : 'rgba(255,255,255,0.92)', color: isDark ? '#d4dae8' : '#3c3022' }}
+            title="Edit entry"
+          >
+            <Edit3 className="w-3 h-3" />
+          </button>
+          <button
+            onClick={handleVoicePlayback}
             disabled={isAudioLoading}
-            className="p-1 rounded transition-colors" 
+            className="p-1 rounded transition-colors"
             style={{ backgroundColor: isDark ? 'rgba(30,30,40,0.9)' : 'rgba(255,255,255,0.92)', color: isDark ? '#d4dae8' : '#3c3022' }}
             title={isPlaying ? 'Stop playback' : 'Listen to summary'}
           >

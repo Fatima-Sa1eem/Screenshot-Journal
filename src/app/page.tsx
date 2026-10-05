@@ -6,6 +6,7 @@ import { MobileNavBar } from '@/components/MobileNavBar';
 import { MobileDrawer } from '@/components/MobileDrawer';
 import { JournalCanvas } from '@/components/canvas/JournalCanvas';
 import { ImageModal } from '@/components/ImageModal';
+import { EditModal } from '@/components/EditModal';
 import { ScreenshotItem } from '@/types/journal';
 import { Check, AlertCircle, BookOpen } from 'lucide-react';
 import { getActiveTheme, ThemeId } from '@/lib/themes';
@@ -56,6 +57,7 @@ export default function ScreenshotJournalPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [previewItem, setPreviewItem] = useState<ScreenshotItem | null>(null);
+  const [editItem, setEditItem] = useState<ScreenshotItem | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' | 'error' } | null>(null);
   const [activeThemeId, setActiveThemeId] = useState<ThemeId>('paperback');
@@ -136,17 +138,67 @@ export default function ScreenshotJournalPage() {
     }
   };
 
+  const handleEditNode = (item: ScreenshotItem) => {
+    setEditItem(item);
+  };
+
+  const handleSaveEdit = async (id: string, updates: { title?: string; category?: string; tags?: string[]; summary?: string }) => {
+    try {
+      const res = await fetch('/api/update-screenshot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, ...updates }),
+      });
+
+      if (res.ok) {
+        const result = await res.json();
+        if (result.updated) {
+          setItems((prev) => prev.map((item) => item.id === id ? result.updated : item));
+          showToast('Entry updated successfully', 'success');
+        }
+      }
+    } catch (err) {
+      console.error('Update error:', err);
+      showToast('Failed to update entry', 'error');
+    }
+  };
+
   const handleAutoLayout = () => {
-    setItems((prev) =>
-      prev.map((item, index) => ({
-        ...item,
-        position: {
-          x: (index % 3) * 220 + 60,
-          y: Math.floor(index / 3) * 320 + 60,
-        },
-      }))
-    );
-    showToast('Polaroids arranged neatly', 'info');
+    setItems((prev) => {
+      // Group items by category for stacked layout
+      const categoryGroups = prev.reduce((acc, item) => {
+        const cat = item.category || 'Uncategorized';
+        if (!acc[cat]) acc[cat] = [];
+        acc[cat].push(item);
+        return acc;
+      }, {} as Record<string, typeof prev>);
+
+      // Calculate positions with category stacking (20px gap between categories)
+      let yOffset = 60;
+      const categoryPositions: Record<string, { startY: number }> = {};
+      
+      Object.keys(categoryGroups).sort().forEach((category) => {
+        categoryPositions[category] = { startY: yOffset };
+        const itemsInCategory = categoryGroups[category].length;
+        yOffset += Math.ceil(itemsInCategory / 3) * 320 + 20; // 20px gap between categories
+      });
+
+      return prev.map((item) => {
+        const category = item.category || 'Uncategorized';
+        const categoryStartY = categoryPositions[category]?.startY || 60;
+        const categoryItems = categoryGroups[category];
+        const itemIndexInCategory = categoryItems.findIndex((i) => i.id === item.id);
+        
+        return {
+          ...item,
+          position: {
+            x: (itemIndexInCategory % 3) * 220 + 60,
+            y: categoryStartY + Math.floor(itemIndexInCategory / 3) * 320,
+          },
+        };
+      });
+    });
+    showToast('Polaroids arranged by category', 'info');
   };
 
   const handleAddSample = async () => {
@@ -184,6 +236,7 @@ export default function ScreenshotJournalPage() {
           items={items}
           onDeleteNode={handleDeleteNode}
           onPreviewNode={setPreviewItem}
+          onEditNode={handleEditNode}
           searchQuery={searchQuery}
           selectedCategory={selectedCategory}
           theme={theme}
@@ -218,6 +271,15 @@ export default function ScreenshotJournalPage() {
 
       {/* ── Fullscreen Polaroid Modal (mobile bottom sheet / desktop centered) ── */}
       <ImageModal item={previewItem} onClose={() => setPreviewItem(null)} />
+
+      {/* ── Edit Modal ── */}
+      <EditModal
+        item={editItem}
+        isOpen={!!editItem}
+        onClose={() => setEditItem(null)}
+        onSave={handleSaveEdit}
+        theme={theme}
+      />
 
       {/* ── Toast notification ── */}
       {toast && (

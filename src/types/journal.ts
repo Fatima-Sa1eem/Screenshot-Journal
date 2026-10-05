@@ -15,6 +15,14 @@ export interface ScreenshotItem {
   aiStatus?: 'ollama_gemma_2b' | 'fallback_parser';
 }
 
+export interface UpdateScreenshotRequest {
+  id: string;
+  title?: string;
+  category?: string;
+  tags?: string[];
+  summary?: string;
+}
+
 export interface ProcessScreenshotRequest {
   screenshot: string; // base64 string
   instruction?: string;

@@ -1,5 +1,5 @@
 import { MongoClient, Db } from 'mongodb';
-import { ScreenshotItem } from '@/types/journal';
+import { ScreenshotItem, UpdateScreenshotRequest } from '@/types/journal';
 import { memoryStore } from './storage';
 
 const uri = process.env.MONGODB_URI || '';
@@ -105,4 +105,50 @@ export async function deleteScreenshot(id: string): Promise<boolean> {
   }
 
   return memoryStore.delete(id);
+}
+
+export async function updateScreenshot(update: UpdateScreenshotRequest): Promise<{ updated: ScreenshotItem | null; source: 'atlas' | 'memory' }> {
+  try {
+    const db = await getDatabase();
+    if (db) {
+      const collection = db.collection<ScreenshotItem>('screenshots');
+      
+      // Build update object with only provided fields
+      const updateFields: Partial<ScreenshotItem> = {};
+      if (update.title !== undefined) updateFields.title = update.title;
+      if (update.category !== undefined) updateFields.category = update.category;
+      if (update.tags !== undefined) updateFields.tags = update.tags;
+      if (update.summary !== undefined) updateFields.summary = update.summary;
+      
+      const res = await collection.updateOne(
+        { id: update.id },
+        { $set: updateFields }
+      );
+      
+      if (res.modifiedCount > 0) {
+        const updated = await collection.findOne({ id: update.id });
+        if (updated) {
+          return { updated, source: 'atlas' };
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('MongoDB Atlas update failed, updating local session store:', err);
+  }
+
+  // Fallback to memory store
+  const existing = memoryStore.get(update.id);
+  if (existing) {
+    const updated: ScreenshotItem = {
+      ...existing,
+      ...(update.title !== undefined && { title: update.title }),
+      ...(update.category !== undefined && { category: update.category }),
+      ...(update.tags !== undefined && { tags: update.tags }),
+      ...(update.summary !== undefined && { summary: update.summary }),
+    };
+    memoryStore.insert(updated);
+    return { updated, source: 'memory' };
+  }
+  
+  return { updated: null, source: 'memory' };
 }

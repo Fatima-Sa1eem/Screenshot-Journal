@@ -14,7 +14,12 @@ export const memoryStore = {
   getAll: (): ScreenshotItem[] => {
     return global.__memoryScreenshots || [];
   },
-  
+
+  get: (id: string): ScreenshotItem | null => {
+    if (!global.__memoryScreenshots) return null;
+    return global.__memoryScreenshots.find((item) => item.id === id) || null;
+  },
+
   insert: (item: ScreenshotItem): ScreenshotItem => {
     if (!global.__memoryScreenshots) {
       global.__memoryScreenshots = [];
